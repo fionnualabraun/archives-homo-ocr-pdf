@@ -1,0 +1,41 @@
+import os
+from PIL import Image
+import pytesseract
+from PyPDF2 import PdfMerger
+
+# Input and output paths
+input_folder = '/Users/fionnualabraun/Documents/Archives Homo 06-2025 copy'
+output_pdf = '/Users/fionnualabraun/Documents/searchable_combined.pdf'
+
+# Collect image files (sorted alphabetically)
+image_files = sorted([
+    os.path.join(input_folder, file)
+    for file in os.listdir(input_folder)
+    if file.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp'))
+])
+
+# Create individual searchable PDF pages
+pdf_pages = []
+for image_path in image_files:
+    print(f"Processing {image_path}...")
+    temp_pdf_path = image_path + ".pdf"
+    pdf_bytes = pytesseract.image_to_pdf_or_hocr(image_path, extension='pdf')
+    
+    with open(temp_pdf_path, 'wb') as f:
+        f.write(pdf_bytes)
+    
+    pdf_pages.append(temp_pdf_path)
+
+# Merge all the individual PDFs into one
+merger = PdfMerger()
+for pdf in pdf_pages:
+    merger.append(pdf)
+
+merger.write(output_pdf)
+merger.close()
+
+# Optional: Remove the temporary single-page PDFs
+for pdf in pdf_pages:
+    os.remove(pdf)
+
+print(f"\n✅ Searchable PDF saved to: {output_pdf}")
